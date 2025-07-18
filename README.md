@@ -1,7 +1,7 @@
 ## 👑 Creator ( Joker Exodus )
 ©2025 - Joker
 
-c'est ma base de bot simple réalisée avec de l'aide 🧚
+c'est ma base de bot simple réalisée par moi même et non modifier 🧚
 
 ## Developer ( Joker Exodus )
 ©2025 - Joker
