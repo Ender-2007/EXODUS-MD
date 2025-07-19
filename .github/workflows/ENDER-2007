@@ -1,0 +1,114 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
+git clone https://github.com/nom-utilisateur/nom-du-repo.git
+cd nom-du-repo
+npm installconst { default: makeWASocket, useMultiFileAuthState, DisconnectReason, makeInMemoryStore } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
+const P = require('pino');
+const fs = require('fs');
+
+const startSock = async () => {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+    const sock = makeWASocket({
+        logger: P({ level: 'silent' }),
+        printQRInTerminal: true,
+        auth: state
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        const msg = messages[0];
+        if (!msg.message || msg.key.fromMe) return;
+        const from = msg.key.remoteJid;
+        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+
+        const reply = (text) => sock.sendMessage(from, { text }, { quoted: msg });
+
+        if (body.startsWith('!menu')) {
+            reply('*Commandes disponibles :*
+!menu
+!tagall
+!kick
+!purge');
+        }
+
+        if (body.startsWith('!tagall') && msg.key.participant) {
+            const groupMetadata = await sock.groupMetadata(from);
+            const participants = groupMetadata.participants.map(p => p.id);
+            const mentions = participants.map(p => p.replace(/@s.whatsapp.net/, ''));
+            await sock.sendMessage(from, {
+                text: `@${mentions.join(' @')}`,
+                mentions: participants
+            });
+        }
+
+        if (body.startsWith('!kick')) {
+            if (msg.key.participant) {
+                const number = body.split(' ')[1];
+                if (!number) return reply('Utilisation : !kick 123456789');
+                await sock.groupParticipantsUpdate(from, [`${number}@s.whatsapp.net`], 'remove');
+            }
+        }
+
+        if (body.startsWith('!purge')) {
+            reply('Commande purge non implémentée. (fonction test)');
+        }
+    });
+
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === 'close') {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            if (shouldReconnect) {
+                startSock();
+            }
+        }
+    });
+
+    return sock;
+}
+
+startSock();module.exports = {
+  name: "menu",
+  description: "Affiche le menu du bot",
+  execute(message, args) {
+    message.reply(`
+╭────🛠️ *Menu du Bot* 🛠️
+│ 📌 !menu - Affiche ce menu
+│ 🔨 !kick @user - Expulse un membre
+│ 👥 !tagall - Mentionne tout le monde
+│ 🧹 !purge - Supprime tous les messages
+╰────────────────────────
+    `);
+  }
+  }npm start
